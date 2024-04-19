@@ -28,10 +28,10 @@ class WebhookController extends Controller
             $timestamp = $data["entry"][0]["changes"][0]["value"]["statuses"][0]["timestamp"];
             $status = $data["entry"][0]["changes"][0]["value"]["statuses"][0]["status"];
 
-            $this->service->trata_ack($id_message, $timestamp, $status);            
+            $response = $this->service->trata_ack($id_message, $timestamp, $status);            
         }      
         
-        return response()->json(['status' => 'Ok'], 200);
+        return response()->json(['status' => $response], 200);
         
     }
 

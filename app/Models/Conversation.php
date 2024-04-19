@@ -10,7 +10,6 @@ class Conversation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'data_conversa',   
         'resp',
         'id_contato',
         'id_promo',
@@ -18,10 +17,14 @@ class Conversation extends Model
         'id_message',
         'time_sent',
         'time_delivered',
-        'time_read'
+        'time_read',
+        'created_at',
+        'updated_at'
     ];
 
     protected $dates = [
-        'data_conversa'
+        'data_conversa',
+        'created_at',
+        'updated_at'
     ];
 }

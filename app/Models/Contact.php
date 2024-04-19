@@ -21,11 +21,15 @@ class Contact extends Model
         'status',
         'id_promo',
         'necessita_atendimento',
-        'ultimo_contato'
+        'ultimo_contato',
+        'created_at',
+        'updated_at'
     ];
 
     protected $dates = [
         'nascimento',
-        'ultimo_contato'
+        'ultimo_contato',
+        'created_at',
+        'updated_at'
     ];
 }

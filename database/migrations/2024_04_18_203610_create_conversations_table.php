@@ -14,8 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('conversations', function (Blueprint $table) {
-            $table->id();
-            $table->dateTime('data_conversa');
+            $table->id();            
             $table->integer('resp'); // 0 = chatBot  1 = Contato   2 = Atendente
             $table->foreignId('id_contato')->constrained()->on('contacts');
             $table->foreignId('id_promo')->nullable(true)->constrained()->on('promotions');
@@ -24,6 +23,7 @@ return new class extends Migration
             $table->integer('time_sent')->default(0);
             $table->integer('time_delivered')->default(0);
             $table->integer('time_read')->default(0);
+            $table->timestamps();
         });
     }
 

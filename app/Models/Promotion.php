@@ -31,6 +31,13 @@ class Promotion extends Model
         'atualizacao_timestamp',
         'status_contato',
         'quant_cancelamentos',
-        'quant_aceites'
+        'quant_aceites',
+        'created_at',
+        'updated_at'
+    ];
+
+    protected $dates = [
+        'created_at',
+        'updated_at'
     ];
 }
