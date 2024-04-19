@@ -16,8 +16,7 @@ return new class extends Migration
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
             $table->string("promo",100);
-            $table->string('language',6)->default('pt_BR');
-            $table->dateTime('data_promo');
+            $table->string('language',6)->default('pt_BR');            
             $table->string('tipo_cabecalho',12)->nullable(true);
             $table->string('corpo_cabecalho',256)->nullable(true);
             $table->string('tipo_rodape',12)->nullable(true);
