@@ -16,7 +16,7 @@ class webhookService
 
     function trata_ack($id_message, $timestamp, $status)
     {      
-        // atualiza em histórico de conversas individual
+        // atualiza status em histórico de conversas individual (enviada/entregue/lida)
         $data = array("time_" . $status => "$timestamp");        
         return $this->conversationRepository->updateByIdMessage($id_message, $data);
     }

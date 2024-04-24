@@ -19,6 +19,9 @@ class WebhookController extends Controller
     {
 
         $data = $request->json()->all();
+        if (!$data) {
+            return response()->json(['message' => 'Dados Ausentes'], 400);
+        }
 
         // -------------------------------------------------------------------------
         // tratamento de ACK (status da mensagem: aceita, enviada, entregue,lida)
@@ -28,11 +31,10 @@ class WebhookController extends Controller
             $timestamp = $data["entry"][0]["changes"][0]["value"]["statuses"][0]["timestamp"];
             $status = $data["entry"][0]["changes"][0]["value"]["statuses"][0]["status"];
 
-            $response = $this->service->trata_ack($id_message, $timestamp, $status);            
-        }      
-        
-        return response()->json(['status' => $response], 200);
-        
+            $response = $this->service->trata_ack($id_message, $timestamp, $status);
+        }
+
+        return response()->json(['message' => $response["message"]], $response["status_code"]);
     }
 
 }
