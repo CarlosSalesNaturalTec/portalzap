@@ -94,7 +94,7 @@ class webhookService
                         $obs = "Modelo Pausado. " . $title . " - " . $description;
                         break;
                     case 'PENDING_DELETION':
-                        $obs = "Exclusao de Modelo em andamento";
+                        $obs = "Exclusão de Modelo";
                         break;
                     default:
                         $obs="Verifique Status do Modelo junto ao Meta";
@@ -105,6 +105,20 @@ class webhookService
             }            
         }
 
+        // -------------------------------------------------------------------------
+        // Atualização de Score de Qualidade de Modelos 
+        // -------------------------------------------------------------------------
+        if (isset($data["entry"][0]["changes"][0]["field"])) {
+            if ($data["entry"][0]["changes"][0]["field"] == "message_template_quality_update") {
+                $previus = $data["entry"][0]["changes"][0]["value"]["previous_quality_score"];     
+                $new = $data["entry"][0]["changes"][0]["value"]["new_quality_score"];  
+                $message_template_id = $data["entry"][0]["changes"][0]["value"]["message_template_id"]; 
+                $message_template_name = $data["entry"][0]["changes"][0]["value"]["message_template_name"];
+    
+                $response = $this->atualiza_score_qualidade_modelos($previus, $new, $message_template_id, $message_template_name);
+            }     
+        }
+        
         return $response;
     }
 
@@ -180,7 +194,7 @@ class webhookService
         // Salva Alerta (se houver)
         if ($event != "APPROVED") {
             $data = array (
-                "alerta" => "Mudança de Status da campanha $promotion->promo : $obs' ",
+                "alerta" => "Mudança de Status da campanha $promotion->promo. Novo Status: $obs' ",
             );
             $this->alertRepository->store($data);                        
         }
@@ -191,4 +205,34 @@ class webhookService
         );
         
     }
+
+    function atualiza_score_qualidade_modelos($previus, $new, $message_template_id, $message_template_name){
+        
+        $promotion = $this->promotionRepository->findByIdModel($message_template_id);
+        if (!$promotion) {           
+            return array(
+                "message" => "ID do Modelo não localizaddo",
+                "status_code" => 404
+            );
+        }
+
+        $data = array(
+            "score_qualidade_atual" => $new,
+            "score_qualidade_anterior" => $previus,
+        );        
+        $this->promotionRepository->update($promotion, $data);
+
+        $data = array (
+            "alerta" => "Mudança de qualidade da campanha $promotion->promo. Novo score: $new' ",
+        );
+        $this->alertRepository->store($data);       
+       
+        $response = array(
+            "message" => "ok",
+            "status_code" => 200
+        );
+        
+        return $response;
+    }
+
 }
