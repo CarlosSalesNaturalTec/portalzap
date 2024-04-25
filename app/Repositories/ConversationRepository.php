@@ -18,22 +18,14 @@ class ConversationRepository
         return $this->conversation->where('id_message', $idMessage)->first();
     }
 
-    public function updateByIdMessage(string $idMessage, array $data): array
+    public function update(Conversation $conversation, array $data): void
     {
-        $conversation = $this->findByIdMessage($idMessage);   
-        if ($conversation) {
-            $conversation->update($data);
-            $message = "ok";
-            $status_code = 200;
-        } else {
-            $message = "ID da mensagem não localizaddo";
-            $status_code = 404;
-        }    
+        $conversation->update($data);
+    }
 
-        return array(
-            "message" => $message,
-            "status_code" => $status_code
-        ); 
+    public function store(array $data)
+    {
+        $this->conversation->firstOrCreate($data);
     }
     
 }
