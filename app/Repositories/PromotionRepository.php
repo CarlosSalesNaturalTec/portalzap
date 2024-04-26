@@ -13,6 +13,11 @@ class PromotionRepository
         $this->promotion = $promotion;
     }
 
+    public function findById(int $id)
+    {
+        return $this->promotion->find($id);
+    }
+
     public function findByIdModel(string $id_model)
     {
         return $this->promotion->where('id_modelo', $id_model)->first();

@@ -241,7 +241,7 @@ class webhookService
                 // Comando para Parar Envio de Mensagens / Inativar Cadastro
                 if ( strtoupper($user_message) == "#PARARMENSAGENS") {
                     $this->inativar_contato($tel); // parei aqui
-                    //$this->atualiza_quants_campanha($tel, "C");  // Atualiza quantidade de cancelamentos da campanha
+                    $this->atualiza_quants_campanha($tel, "C");  // Atualiza quantidade de cancelamentos da campanha
                     return;
                 }
         
@@ -444,50 +444,29 @@ class webhookService
 
     function atualiza_quants_campanha($tel, $tipo_quant){
 
-        // // obtem dados da última campanha enviada ao usuário 
-        // $id_campanha = "";
-        // $id_revend="";
-        // $sql = "select id_revend, id_campanha from tbl_contatos ";
-        // $sql .= "where telefone = '$tel' and necessita_atendimento = 0";
-        // $Dbobj = new dbconnection(); 
-        // $query = mysqli_query($Dbobj->getdbconnect(), $sql);  
-        // while($row = $query->fetch_assoc()) {
-        //     $id_campanha = $row["id_campanha"];
-        //     $id_revend = $row["id_revend"];
-        // }
-        // mysqli_free_result($query);mysqli_close($Dbobj->$conn);
-
-        // if ($id_campanha == "") { return; }
+        // obtem dados da última campanha enviada ao usuário        
+        $contact = $this->contactRepository->findByTel($tel);
+        if ($contact) {
+            $id_campanha = $contact->id_promo;
+            $id_revend = $contact->id;
+        } else {
+            exit;
+        }       
         
-        // // atualiza quantidades
-        // $sql = "update tbl_promos set ";
-        // if ($tipo_quant == "C") {
-        //     $sql .= "quant_cancelamentos = quant_cancelamentos + 1 ";
-        // } else{
-        //     $sql .= "quant_aceites = quant_aceites + 1 ";
-        // } 
-        // $sql .= "where id_promo = '$id_campanha'";
-        // $Dbobj = new dbconnection(); 
-        // $query = mysqli_query($Dbobj->getdbconnect(), $sql);
-        // mysqli_close($Dbobj->$conn);
-
-        // if ($tipo_quant == "A") {
-        //     // atualiza status do contato . informa que o mesmo necessita de atendimento        
-        //     $sql = "update tbl_contatos set ";
-        //     $sql .= "necessita_atendimento = 1 ";
-        //     $sql .= "where telefone = '$tel'";
-        //     $Dbobj = new dbconnection(); 
-        //     $query = mysqli_query($Dbobj->getdbconnect(), $sql);
-        //     mysqli_close($Dbobj->$conn);
-
-        //     // Insere em tabela de aceites
-        //     $sql = "insert into tbl_promos_aceites ";
-        //     $sql .= "(id_campanha, id_contato, data_aceite) ";
-        //     $sql .= "values ('$id_campanha', '$id_revend', date_add(now(), interval -3 hour) )";
-        //     $Dbobj = new dbconnection(); 
-        //     $query = mysqli_query($Dbobj->getdbconnect(), $sql);
-        //     mysqli_close($Dbobj->$conn);
-        // }
+        // atualiza quantidades de cancelamentos ou aceites na tabela de Promocoes/Modelos
+        $promotion = $this->promotionRepository->findById($id_campanha);
+        if ($tipo_quant == "C") {
+            $quant_new = $promotion->quant_cancelamentos + 1;
+            $data = array(
+                "quant_cancelamentos" => $quant_new
+            );
+        } else{
+            $quant_new = $promotion->quant_aceites + 1;
+            $data = array(
+                "quant_aceites" => $quant_new
+            );
+        } 
+        $this->promotionRepository->update($promotion, $data);
                 
     }
 
