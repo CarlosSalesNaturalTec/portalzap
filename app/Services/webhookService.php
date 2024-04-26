@@ -245,12 +245,11 @@ class webhookService
                     return;
                 }
         
-                // // Comando para Reiniciar Envio de Mensagens / Reativar Cadastro
-                // if ( strtoupper($user_message)  == "#ATIVARCADASTRO") {
-                //     $this->ativar_contato($tel);
-                //     $this->atualiza_quants_campanha($tel, "A");
-                //     return;
-                // }
+                // Comando para Reiniciar Envio de Mensagens / Reativar Cadastro
+                if ( strtoupper($user_message)  == "#ATIVARCADASTRO") {
+                    $this->ativar_contato($tel);
+                    return;
+                }
         
                 // // verifica status INATIVO
                 // if ($this->status_contato($tel) == "Inativos") {return;}
@@ -446,12 +445,8 @@ class webhookService
 
         // obtem dados da última campanha enviada ao usuário        
         $contact = $this->contactRepository->findByTel($tel);
-        if ($contact) {
-            $id_campanha = $contact->id_promo;
-            $id_revend = $contact->id;
-        } else {
-            exit;
-        }       
+        if (!$contact) { exit; }   
+        $id_campanha = $contact->id_promo;                
         
         // atualiza quantidades de cancelamentos ou aceites na tabela de Promocoes/Modelos
         $promotion = $this->promotionRepository->findById($id_campanha);
