@@ -6,19 +6,21 @@ use App\Repositories\ConversationRepository;
 use App\Repositories\ContactRepository;
 use App\Repositories\PromotionRepository;
 use App\Repositories\AlertRepository;
+use App\Repositories\ParameterRepository;
 
 class webhookService
 {
 
-    private $conversationRepository, $contactRepository, $promotionRepository, $alertRepository;
+    private $conversationRepository, $contactRepository, $promotionRepository, $alertRepository, $parameterRepository;
 
     public function __construct(ConversationRepository $conversationRepository, ContactRepository $contactRepository, 
-        PromotionRepository $promotionRepository, AlertRepository $alertRepository)
+        PromotionRepository $promotionRepository, AlertRepository $alertRepository, ParameterRepository $parameterRepository)
     {
         $this->conversationRepository = $conversationRepository;
         $this->contactRepository = $contactRepository;
         $this->promotionRepository = $promotionRepository;
         $this->alertRepository = $alertRepository;
+        $this->parameterRepository = $parameterRepository;
     }
 
     function analisa_request(array $data)
@@ -61,10 +63,10 @@ class webhookService
             $resp = 1;  // $resp = 1 :  Mensagem Recebida do Contato           
             $this->salva_mensagem($tel, $name, $resp, $body_message,  $id_message);
 
-            // análise da mensagem recebida
-            // $ms->analisa_mensagem($type_message, $body_message, $tel);
+            // análise da mensagem recebida / envio de resposta
+            $this->analisa_mensagem($type_message, $body_message, $tel);            
 
-            $response = array(
+            $response =  array(
                 "message" => "ok",
                 "status_code" => 200
             );
@@ -121,7 +123,6 @@ class webhookService
         
         return $response;
     }
-
 
     function trata_ack($id_message, $timestamp, $status)
     {
@@ -233,6 +234,261 @@ class webhookService
         );
         
         return $response;
+    }
+
+    function analisa_mensagem ($type_message, $user_message, $tel) 
+    {
+                // Comando para Parar Envio de Mensagens / Inativar Cadastro
+                if ( strtoupper($user_message) == "#PARARMENSAGENS") {
+                    $this->inativar_contato($tel); // parei aqui
+                    //$this->atualiza_quants_campanha($tel, "C");  // Atualiza quantidade de cancelamentos da campanha
+                    return;
+                }
+        
+                // // Comando para Reiniciar Envio de Mensagens / Reativar Cadastro
+                // if ( strtoupper($user_message)  == "#ATIVARCADASTRO") {
+                //     $this->ativar_contato($tel);
+                //     $this->atualiza_quants_campanha($tel, "A");
+                //     return;
+                // }
+        
+                // // verifica status INATIVO
+                // if ($this->status_contato($tel) == "Inativos") {return;}
+        
+                
+                // // Atualiza quantidade de ACEITES da campanha
+                // // $this->atualiza_quants_campanha($tel, "A");
+        
+        
+                // // dados do contato
+                // $sql = "select nome, id_revend from tbl_contatos where telefone = '$tel'";
+                // $Dbobj = new dbconnection(); 
+                // $query = mysqli_query($Dbobj->getdbconnect(), $sql);  
+                // while($row = $query->fetch_assoc()) {
+                //     $nome = $row["nome"];
+                //     $id_contato = $row["id_revend"];
+                // }
+                // mysqli_free_result($query);mysqli_close($Dbobj->$conn);
+        
+                
+                // // obtem PROMPT a partir de arquivo TXT armazenado em nuvem 
+                // $sql = "select url_prompt from tbl_config";
+                // $Dbobj = new dbconnection(); 
+                // $query = mysqli_query($Dbobj->getdbconnect(), $sql);  
+                // while($row = $query->fetch_assoc()) {
+                //     $url_prompt = $row["url_prompt"];
+                // }
+                // mysqli_free_result($query);mysqli_close($Dbobj->$conn);        
+                // $prompt = file_get_contents($url_prompt, false);       
+        
+        
+                // // montagem do corpo da requisição
+                // $history = []; $parts_user = []; $parts_model = [];
+                // array_push($parts_user, ["text" => "Eu me chamo $nome"] );
+                // array_push($parts_model, [ "text" => $prompt ] );
+        
+                // // histórico de mensagens (última hora)
+                // $currentTime = date('Y-m-d H:i:s');
+                // $timestamp = strtotime($currentTime);
+                // $oneHourLess = $timestamp - (3600*4); // 3600 seconds in one hour * 4. Sendo que 3 horas do fuso horário + 1 hora atrás
+                // $datetime_limit = date('Y-m-d H:i:s', $oneHourLess);
+                // $sql = "select mensagem, resp FROM tbl_conversas where id_contato = '$id_contato' and data_conversa >= '$datetime_limit' order by data_conversa";
+                // $Dbobj = new dbconnection(); 
+                // $query = mysqli_query($Dbobj->getdbconnect(), $sql);  
+                // while($row = $query->fetch_assoc()) {
+                //     if ($row["resp"] == "1") {
+                //         array_push($parts_user, ["text" => $row["mensagem"] ]);
+                //     } elseif ($row["resp"] == "0") {
+                //         array_push($parts_model, [ "text" => $row["mensagem"] ] );
+                //     }           
+                // }
+                // mysqli_free_result($query);mysqli_close($Dbobj->$conn);        
+                
+                // array_push($history, [
+                //         "role" => "user",
+                //         "parts" => $parts_user,
+                //     ]
+                // );               
+                // array_push($history, [
+                //         "role" => "model",
+                //         "parts" => $parts_model,
+                //     ]
+                // );
+                // $dados = array(
+                //     'user_message' => "$user_message",
+                //     'history' => $history,
+                // );
+                
+                // // Envia mensagem para análise de Inteligência Artificial (Requisição para servidor Node.JS hospedado na Google CLoud / Serviço: GEMINI AI)
+                // $url = 'https://geminiaiapi-6qbxp7kiba-uw.a.run.app/chat';         
+                // $ch = curl_init($url);
+                // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                // curl_setopt($ch, CURLOPT_POST, true);
+                // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
+                // curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                //     'Content-Type: application/json',
+                // )); 
+                // $result = curl_exec($ch);
+                // if (curl_errno($ch)) {
+                //     $IA_response = "Olá, este é um atendimento automático. Breve entraremos em contato.";
+                // } else {
+                //     $IA_response = $result;  
+                // }
+                // curl_close($ch);
+                
+                // // envia mensagem automática de texto
+                // $this->envia_msg_texto($tel, $IA_response);
+
+                
+        return array(
+            "message" => "ok",
+            "status_code" => 200
+        );
+        
+    }
+
+    function envia_msg_texto($tel, $text_response){
+
+        // parâmetros de envio 
+        $id_cli = 1;
+        $param = $this->parameterRepository->findById($id_cli);
+
+        $url_base = $param->api_url;
+        $id_tel = $param->id_telefone;
+        $token = $param->token;
+
+        // body request
+        $data_text = [
+            'preview_url' => false,
+            'body' => "$text_response"
+        ];
+        $data = [
+            'messaging_product' => "whatsapp",
+            'recipient_type' => "individual",
+            'to' => "$tel",
+            'type' => "text",
+            'text' => $data_text
+        ];
+        $json = json_encode($data); 
+
+        // cURL request
+        $url = $url_base . "/" . $id_tel . "/messages";    
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $token
+        ));     
+        $response = curl_exec($ch);
+
+        if(curl_errno($ch)) {
+            $send_response = 'cURL Error' ; //. curl_error($ch);
+        } else {
+            $json_response = json_decode($response);        
+            if (isset($json_response->messages[0]->id)) {
+                $id_message = $json_response->messages[0]->id;
+                $send_contact = $json_response->contacts[0]->wa_id;
+                $send_response = "OK";
+            } else{
+                $send_response = "Erro: retorno esperado não recebido.";
+            }
+        }
+        curl_close($ch);
+        
+        //salva mensagem de texto em histórico de conversas
+        $resp = 0; // $resp = 0 :  Mensagem Enviada pelo Chatbot
+        $send_name = "";
+        
+        if ($send_response == "OK") {                  
+            $this->salva_mensagem($send_contact, $send_name, $resp, $text_response, $id_message); 
+        } else {
+            $id_message = "X";
+            $this->salva_mensagem($tel, $send_name, $resp, $send_response, $id_message); 
+        }
+
+    }         
+
+    function inativar_contato($tel){
+        $contact = $this->contactRepository->findByTel($tel);
+        if (!$contact) { exit; } 
+        
+        $data = array( "status" => "Inativos");
+        $this->contactRepository->update($contact, $data);
+        
+        $text_response = "Ok, *não iremos lhe enviar novas mensagens*. Caso tenha solicitado por engano, digite a palavra *ATIVAR CADASTRO*.";
+        $this->envia_msg_texto($tel, $text_response);
+    }
+
+    function ativar_contato($tel){
+        $contact = $this->contactRepository->findByTel($tel);
+        if (!$contact) { exit; } 
+
+        $data = array( "status" => "Ativos");
+        $this->contactRepository->update($contact, $data);      
+
+        $text_response = "Ok, *cadastro ATIVADO*.";
+        $this->envia_msg_texto($tel, $text_response);
+    }
+
+    function status_contato($tel){
+        $contact = $this->contactRepository->findByTel($tel);
+        if ($contact) { 
+            $status = $contact->status;
+        } else {
+            $status = "";
+        }
+        return $status;
+    }
+
+    function atualiza_quants_campanha($tel, $tipo_quant){
+
+        // // obtem dados da última campanha enviada ao usuário 
+        // $id_campanha = "";
+        // $id_revend="";
+        // $sql = "select id_revend, id_campanha from tbl_contatos ";
+        // $sql .= "where telefone = '$tel' and necessita_atendimento = 0";
+        // $Dbobj = new dbconnection(); 
+        // $query = mysqli_query($Dbobj->getdbconnect(), $sql);  
+        // while($row = $query->fetch_assoc()) {
+        //     $id_campanha = $row["id_campanha"];
+        //     $id_revend = $row["id_revend"];
+        // }
+        // mysqli_free_result($query);mysqli_close($Dbobj->$conn);
+
+        // if ($id_campanha == "") { return; }
+        
+        // // atualiza quantidades
+        // $sql = "update tbl_promos set ";
+        // if ($tipo_quant == "C") {
+        //     $sql .= "quant_cancelamentos = quant_cancelamentos + 1 ";
+        // } else{
+        //     $sql .= "quant_aceites = quant_aceites + 1 ";
+        // } 
+        // $sql .= "where id_promo = '$id_campanha'";
+        // $Dbobj = new dbconnection(); 
+        // $query = mysqli_query($Dbobj->getdbconnect(), $sql);
+        // mysqli_close($Dbobj->$conn);
+
+        // if ($tipo_quant == "A") {
+        //     // atualiza status do contato . informa que o mesmo necessita de atendimento        
+        //     $sql = "update tbl_contatos set ";
+        //     $sql .= "necessita_atendimento = 1 ";
+        //     $sql .= "where telefone = '$tel'";
+        //     $Dbobj = new dbconnection(); 
+        //     $query = mysqli_query($Dbobj->getdbconnect(), $sql);
+        //     mysqli_close($Dbobj->$conn);
+
+        //     // Insere em tabela de aceites
+        //     $sql = "insert into tbl_promos_aceites ";
+        //     $sql .= "(id_campanha, id_contato, data_aceite) ";
+        //     $sql .= "values ('$id_campanha', '$id_revend', date_add(now(), interval -3 hour) )";
+        //     $Dbobj = new dbconnection(); 
+        //     $query = mysqli_query($Dbobj->getdbconnect(), $sql);
+        //     mysqli_close($Dbobj->$conn);
+        // }
+                
     }
 
 }

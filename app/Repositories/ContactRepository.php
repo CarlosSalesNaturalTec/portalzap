@@ -22,5 +22,10 @@ class ContactRepository
     {
         return $this->contact->firstOrCreate($data)->id;
     }
+
+    public function update(Contact $contact, array $data): void
+    {
+        $contact->update($data);
+    }
     
 }
