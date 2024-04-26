@@ -251,8 +251,8 @@ class webhookService
                     return;
                 }
         
-                // // verifica status INATIVO
-                // if ($this->status_contato($tel) == "Inativos") {return;}
+                // verifica status INATIVO
+                if ($this->status_contato($tel) == "Inativos") {exit;}
         
                 
                 // // Atualiza quantidade de ACEITES da campanha
@@ -416,7 +416,7 @@ class webhookService
         $data = array( "status" => "Inativos");
         $this->contactRepository->update($contact, $data);
         
-        $text_response = "Ok, *não iremos lhe enviar novas mensagens*. Caso tenha solicitado por engano, digite a palavra *ATIVAR CADASTRO*.";
+        $text_response = "Ok, *não iremos lhe enviar novas mensagens*. Caso tenha solicitado por engano, digite o comando *#ATIVARCADASTRO*.";
         $this->envia_msg_texto($tel, $text_response);
     }
 
