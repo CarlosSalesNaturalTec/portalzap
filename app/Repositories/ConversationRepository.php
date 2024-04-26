@@ -32,7 +32,7 @@ class ConversationRepository
     {
         return $this->conversation
             ->where('id_contato', $id_contato)
-            ->where('data_conversa', ">=", $datetime_limit)
+            ->where('created_at', ">=", $datetime_limit)
             ->get();
     }
     
