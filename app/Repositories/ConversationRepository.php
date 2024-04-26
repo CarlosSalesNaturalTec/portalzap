@@ -27,5 +27,13 @@ class ConversationRepository
     {
         $this->conversation->firstOrCreate($data);
     }
+
+    public function historic($id_contato, $datetime_limit)
+    {
+        return $this->conversation
+            ->where('id_contato', $id_contato)
+            ->where('data_conversa', ">=", $datetime_limit)
+            ->get();
+    }
     
 }

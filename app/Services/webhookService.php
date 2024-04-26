@@ -63,7 +63,7 @@ class webhookService
             $resp = 1;  // $resp = 1 :  Mensagem Recebida do Contato           
             $this->salva_mensagem($tel, $name, $resp, $body_message,  $id_message);
 
-            // análise da mensagem recebida / envio de resposta
+            // análise da mensagem recebida E envio de resposta
             $this->analisa_mensagem($type_message, $body_message, $tel);            
 
             $response =  array(
@@ -238,97 +238,89 @@ class webhookService
 
     function analisa_mensagem ($type_message, $user_message, $tel) 
     {
-                // Comando para Parar Envio de Mensagens / Inativar Cadastro
-                if ( strtoupper($user_message) == "#PARARMENSAGENS") {
-                    $this->inativar_contato($tel); // parei aqui
-                    $this->atualiza_quants_campanha($tel, "C");  // Atualiza quantidade de cancelamentos da campanha
-                    exit;
-                }
+        // Comando para Parar Envio de Mensagens / Inativar Cadastro
+        if ( strtoupper($user_message) == "#PARARMENSAGENS") {
+            $this->inativar_contato($tel); // parei aqui
+            $this->atualiza_quants_campanha($tel, "C");  // Atualiza quantidade de cancelamentos da campanha
+            exit;
+        }
+
+        // Comando para Reiniciar Envio de Mensagens / Reativar Cadastro
+        if ( strtoupper($user_message)  == "#ATIVARCADASTRO") {
+            $this->ativar_contato($tel);
+            exit;
+        }
+
+        // dados do contato
+        $contact = $this->contactRepository->findByTel($tel);
+        if ($contact) {
+            $nome = $contact->nome;
+            $id_contato = $contact->id;
+            if ($contact->status == "Inativos") {exit;}                      
+        }                                          
         
-                // Comando para Reiniciar Envio de Mensagens / Reativar Cadastro
-                if ( strtoupper($user_message)  == "#ATIVARCADASTRO") {
-                    $this->ativar_contato($tel);
-                    exit;
-                }
+        // obtem PROMPT a partir de arquivo TXT armazenado em nuvem 
+        $id_cli = 1;
+        $param = $this->parameterRepository->findById($id_cli);
+        $url_prompt = $param->url_prompt;
+        $prompt = file_get_contents($url_prompt, false);       
         
-                // dados do contato
-                $contact = $this->contactRepository->findByTel($tel);
-                if ($contact) {
-                    $nome = $contact->nome;
-                    $id_contato = $contact->id;
-                    if ($contact->status == "Inativos") {exit;}                      
-                }           
-                
-                $IA_response = "Em andamento";
-                
-                // // obtem PROMPT a partir de arquivo TXT armazenado em nuvem 
-                // $id_cli = 1;
-                // $param = $this->parameterRepository->findById($id_cli);
-                // $url_prompt = $param->url_prompt;
-                // $prompt = file_get_contents($url_prompt, false);       
-                
-                // // montagem do corpo da requisição
-                // $history = []; $parts_user = []; $parts_model = [];
-                // array_push($parts_user, ["text" => "Eu me chamo $nome"] );
-                // array_push($parts_model, [ "text" => $prompt ] );
+        // montagem do corpo da requisição
+        $history = []; $parts_user = []; $parts_model = [];
+        array_push($parts_user, ["text" => "Eu me chamo $nome"] );
+        array_push($parts_model, [ "text" => $prompt ] );
+
+        // histórico de mensagens (última hora)
+        $currentTime = date('Y-m-d H:i:s');
+        $timestamp = strtotime($currentTime);
+        $oneHourLess = $timestamp - (3600*4); // 3600 seconds in one hour * 4. Sendo que 3 horas do fuso horário + 1 hora atrás
+        $datetime_limit = date('Y-m-d H:i:s', $oneHourLess);
+
+        $conversations = $this->conversationRepository->historic($id_contato, $datetime_limit);
+        foreach ($conversations as $conversation) {
+            if ($conversation->resp == "1") {
+                array_push($parts_user, ["text" => $conversation->mensagem ]);
+            } elseif ($conversation->resp == "0") {
+                array_push($parts_model, [ "text" => $conversation->mensagem ] );
+            }
+        }
         
-                // // histórico de mensagens (última hora)
-                // $currentTime = date('Y-m-d H:i:s');
-                // $timestamp = strtotime($currentTime);
-                // $oneHourLess = $timestamp - (3600*4); // 3600 seconds in one hour * 4. Sendo que 3 horas do fuso horário + 1 hora atrás
-                // $datetime_limit = date('Y-m-d H:i:s', $oneHourLess);
-                // $sql = "select mensagem, resp FROM tbl_conversas where id_contato = '$id_contato' and data_conversa >= '$datetime_limit' order by data_conversa";
-                // $Dbobj = new dbconnection(); 
-                // $query = mysqli_query($Dbobj->getdbconnect(), $sql);  
-                // while($row = $query->fetch_assoc()) {
-                //     if ($row["resp"] == "1") {
-                //         array_push($parts_user, ["text" => $row["mensagem"] ]);
-                //     } elseif ($row["resp"] == "0") {
-                //         array_push($parts_model, [ "text" => $row["mensagem"] ] );
-                //     }           
-                // }
-                // mysqli_free_result($query);mysqli_close($Dbobj->$conn);        
-                
-                // array_push($history, [
-                //         "role" => "user",
-                //         "parts" => $parts_user,
-                //     ]
-                // );               
-                // array_push($history, [
-                //         "role" => "model",
-                //         "parts" => $parts_model,
-                //     ]
-                // );
-                // $dados = array(
-                //     'user_message' => "$user_message",
-                //     'history' => $history,
-                // );
-                
-                // // Envia mensagem para análise de Inteligência Artificial (Requisição para servidor Node.JS hospedado na Google CLoud / Serviço: GEMINI AI)
-                // $url = 'https://geminiaiapi-6qbxp7kiba-uw.a.run.app/chat';         
-                // $ch = curl_init($url);
-                // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                // curl_setopt($ch, CURLOPT_POST, true);
-                // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
-                // curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                //     'Content-Type: application/json',
-                // )); 
-                // $result = curl_exec($ch);
-                // if (curl_errno($ch)) {
-                //     $IA_response = "Olá, este é um atendimento automático. Breve entraremos em contato.";
-                // } else {
-                //     $IA_response = $result;  
-                // }
-                // curl_close($ch);
-                
-                // envia mensagem automática de texto
-                $this->envia_msg_texto($tel, $IA_response);
-                
-        return array(
-            "message" => "ok",
-            "status_code" => 200
+        array_push($history, [
+                "role" => "user",
+                "parts" => $parts_user,
+            ]
+        );
+
+        array_push($history, [
+                "role" => "model",
+                "parts" => $parts_model,
+            ]
+        );
+
+        $dados = array(
+            'user_message' => "$user_message",
+            'history' => $history,
         );
         
+        // Envia mensagem para análise de Inteligência Artificial (Requisição para servidor Node.JS hospedado na Google CLoud / Serviço: GEMINI AI)
+        $url = 'https://geminiaiapi-6qbxp7kiba-uw.a.run.app/chat';         
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+        )); 
+        $result = curl_exec($ch);
+        if (curl_errno($ch)) {
+            $IA_response = "Olá, este é um atendimento automático. Breve entraremos em contato.";
+        } else {
+            $IA_response = $result;  
+        }
+        curl_close($ch);
+        
+        // envia mensagem automática de texto
+        $this->envia_msg_texto($tel, $IA_response);                        
     }
 
     function envia_msg_texto($tel, $text_response){
