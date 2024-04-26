@@ -242,45 +242,31 @@ class webhookService
                 if ( strtoupper($user_message) == "#PARARMENSAGENS") {
                     $this->inativar_contato($tel); // parei aqui
                     $this->atualiza_quants_campanha($tel, "C");  // Atualiza quantidade de cancelamentos da campanha
-                    return;
+                    exit;
                 }
         
                 // Comando para Reiniciar Envio de Mensagens / Reativar Cadastro
                 if ( strtoupper($user_message)  == "#ATIVARCADASTRO") {
                     $this->ativar_contato($tel);
-                    return;
+                    exit;
                 }
         
-                // verifica status INATIVO
-                if ($this->status_contato($tel) == "Inativos") {exit;}
-        
+                // dados do contato
+                $contact = $this->contactRepository->findByTel($tel);
+                if ($contact) {
+                    $nome = $contact->nome;
+                    $id_contato = $contact->id;
+                    if ($contact->status == "Inativos") {exit;}                      
+                }           
                 
-                // // Atualiza quantidade de ACEITES da campanha
-                // // $this->atualiza_quants_campanha($tel, "A");
-        
-        
-                // // dados do contato
-                // $sql = "select nome, id_revend from tbl_contatos where telefone = '$tel'";
-                // $Dbobj = new dbconnection(); 
-                // $query = mysqli_query($Dbobj->getdbconnect(), $sql);  
-                // while($row = $query->fetch_assoc()) {
-                //     $nome = $row["nome"];
-                //     $id_contato = $row["id_revend"];
-                // }
-                // mysqli_free_result($query);mysqli_close($Dbobj->$conn);
-        
+                $IA_response = "Em andamento";
                 
                 // // obtem PROMPT a partir de arquivo TXT armazenado em nuvem 
-                // $sql = "select url_prompt from tbl_config";
-                // $Dbobj = new dbconnection(); 
-                // $query = mysqli_query($Dbobj->getdbconnect(), $sql);  
-                // while($row = $query->fetch_assoc()) {
-                //     $url_prompt = $row["url_prompt"];
-                // }
-                // mysqli_free_result($query);mysqli_close($Dbobj->$conn);        
+                // $id_cli = 1;
+                // $param = $this->parameterRepository->findById($id_cli);
+                // $url_prompt = $param->url_prompt;
                 // $prompt = file_get_contents($url_prompt, false);       
-        
-        
+                
                 // // montagem do corpo da requisição
                 // $history = []; $parts_user = []; $parts_model = [];
                 // array_push($parts_user, ["text" => "Eu me chamo $nome"] );
@@ -335,9 +321,8 @@ class webhookService
                 // }
                 // curl_close($ch);
                 
-                // // envia mensagem automática de texto
-                // $this->envia_msg_texto($tel, $IA_response);
-
+                // envia mensagem automática de texto
+                $this->envia_msg_texto($tel, $IA_response);
                 
         return array(
             "message" => "ok",
@@ -429,16 +414,6 @@ class webhookService
 
         $text_response = "Ok, *cadastro ATIVADO*.";
         $this->envia_msg_texto($tel, $text_response);
-    }
-
-    function status_contato($tel){
-        $contact = $this->contactRepository->findByTel($tel);
-        if ($contact) { 
-            $status = $contact->status;
-        } else {
-            $status = "";
-        }
-        return $status;
     }
 
     function atualiza_quants_campanha($tel, $tipo_quant){
