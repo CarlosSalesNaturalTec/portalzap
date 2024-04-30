@@ -319,7 +319,7 @@ class webhookService
         }
         curl_close($ch);
         
-        // envia mensagem automática de texto
+        // envia resposta
         $this->envia_msg_texto($tel, $IA_response);                        
     }
 
@@ -368,7 +368,7 @@ class webhookService
                 $send_contact = $json_response->contacts[0]->wa_id;
                 $send_response = "OK";
             } else{
-                $send_response = "Erro: retorno esperado não recebido.";
+                $send_response = "Erro ao enviar mensagem. Verificar META API. Detalhes: " . $response;
             }
         }
         curl_close($ch);
